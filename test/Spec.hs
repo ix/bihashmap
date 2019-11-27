@@ -29,6 +29,13 @@ main = hspec $
         let second = BHM.empty :: BiHashMap Int Int
         BHM.size first `shouldBe` 1
         BHM.size second `shouldBe` 0
+    describe "insert" $ do
+      let dirty = BHM.insert 10 30 (BHM.singleton 10 20 :: BiHashMap Int Int)
+      it "correctly inserts an association into the map" $ do
+        BHM.lookup 10 dirty `shouldBe` Just 30
+        BHM.lookupR 30 dirty `shouldBe` Just 10
+      it "doesn't leave lingering keys" $
+        BHM.lookupR 20 dirty `shouldBe` Nothing
     -- describe "update" $ do
     --   it "updates an element" $ do
     --     let bhm  = BHM.singleton "hello" "world"

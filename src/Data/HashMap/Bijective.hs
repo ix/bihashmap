@@ -88,7 +88,11 @@ lookupDefaultR d v (BiHashMap _ r) = HM.lookupDefault d v r
 
 -- | /O(log n)/. Insert an element into the map.
 insert :: (Equals k v, Hashables k v) => k -> v -> BiHashMap k v -> BiHashMap k v
-insert k v (BiHashMap l r) = BiHashMap (HM.insert k v l) (HM.insert v k r)
+insert k v (BiHashMap l r) = BiHashMap (HM.insert k v l') (HM.insert v k r')
+  where maybeOldV = HM.lookup k l
+        maybeOldK = HM.lookup v r
+        l'   = maybe l (\oldK -> HM.delete oldK l) maybeOldK
+        r'   = maybe r (\oldV -> HM.delete oldV r) maybeOldV
 
 -- | /O(log n)/. Delete an element from the map by key.
 delete :: (Equals k v, Hashables k v) => k -> BiHashMap k v -> BiHashMap k v
