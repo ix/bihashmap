@@ -26,10 +26,13 @@ module Data.HashMap.Bijective (
   delete,
   deleteR,
   adjust,
+  left,
+  right,
 --  update,
 --  updateR,
   toList,
-  fromList
+  fromList,
+  valid
 ) where
 
 import qualified Data.HashMap.Strict as HM
@@ -38,6 +41,7 @@ import GHC.Generics (Generic)
 import Data.Hashable (Hashable)
 import Data.Tuple (swap)
 import Prelude hiding (null, lookup)
+import Data.List (foldl')
 
 data BiHashMap k v = BiHashMap !(HM.HashMap k v) !(HM.HashMap v k)
   deriving (Generic, NFData)
@@ -125,6 +129,14 @@ adjustR f v m@(BiHashMap l r) =
       BiHashMap (HM.insert nk v $ HM.delete k l) (HM.insert v nk r)
     Nothing -> m 
 
+-- | /O(1)/. Get just the left K -> V map.
+left :: BiHashMap k v -> HM.HashMap k v
+left (BiHashMap l r) = l
+
+-- | /O(1)/. Get just the right V -> K map.
+right :: BiHashMap k v -> HM.HashMap v k
+right (BiHashMap l r) = r
+
 -- | /O(log n)/. Update the value at a key, if present.
 -- 'Nothing' results in the element being deleted.
 -- update :: (Equals k v, Hashables k v) => (v -> Maybe v) -> k -> BiHashMap k v -> BiHashMap k v
@@ -145,9 +157,11 @@ toList (BiHashMap l _) = HM.toList l
 
 -- | /O(n * log n)/. Return a BiHashMap built from a list of two-tuples.
 fromList :: (Equals k v, Hashables k v) => [(k, v)] -> BiHashMap k v
-fromList pairs = BiHashMap left right
-  where left  = HM.fromList pairs
-        right = HM.fromList $ map swap pairs
+fromList = foldl' (flip $ uncurry insert) empty
 
+-- | /O(n)/. Check the equivalence of the two maps.
+valid :: Equals k v => BiHashMap k v -> Bool
+valid (BiHashMap l r) = HM.toList l == (map swap $ HM.toList r)
+  
 instance (Hashables k v, Showables k v) => Show (BiHashMap k v) where
   show = ("fromList " <>) . show . toList 
